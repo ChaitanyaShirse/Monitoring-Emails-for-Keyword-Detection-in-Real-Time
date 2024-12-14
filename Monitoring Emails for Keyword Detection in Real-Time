@@ -1,60 +1,77 @@
-# Monitoring Emails for Keyword Detection in Real-Time
+# Email Based Access Authentication
+import smtplib
 import imaplib
 import email
 from email.header import decode_header
 from datetime import datetime
 import time
-
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 '''https://github.com/ChaitanyaShirse/Monitoring-Emails-for-Keyword-Detection-in-Real-Time'''
-# Account credentials
-sender_email = "chaitanya3035@gmail.com"
-sender_password = "wxyz wxyz wxyz wxyz"     #App Password of mail
-IMAP_SERVER = "imap.gmail.com"
+# Send email function
+def send_email(sender_email, sender_password, recipient_email, subject, message_body):
+    try:
+        msg = MIMEMultipart()
+        msg['Subject'] = subject
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
 
+        # Plain text content
+        msg.attach(MIMEText(message_body, 'plain'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, msg.as_string())
+        print(f"Email sent successfully to {recipient_email}!")
+    except Exception as e:
+        print(f"Error while sending email: {e}")
+
+# Monitor email function
 def monitor_all_emails():
     """Monitor all new emails and check for 'accept' keyword."""
     try:
         # Connect to the IMAP server
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
         mail.login(sender_email, sender_password)
-        
+
         print("Monitoring all incoming emails...")
         start_time = datetime.now()
-        
+
         while True:
             try:
                 # Select the inbox
                 mail.select("inbox")
-                
+
                 # Search for all unseen emails
                 status, messages = mail.search(None, "UNSEEN")
                 email_ids = messages[0].split()
-                
+
                 for email_id in email_ids:
                     # Fetch the email
                     status, msg_data = mail.fetch(email_id, "(RFC822)")
-                    
+
                     for response_part in msg_data:
                         if isinstance(response_part, tuple):
                             # Parse email content
                             msg = email.message_from_bytes(response_part[1])
-                            
+
                             # Get the email's delivery time
                             date_str = msg["Date"]
                             email_time = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z").replace(tzinfo=None)
-                            
+
                             # Check if the email time is after the start time
                             if email_time < start_time:
                                 continue
-                            
+
                             # Decode email sender
                             from_ = msg.get("From")
-                            
+
                             # Decode email subject
                             subject, encoding = decode_header(msg["Subject"])[0]
                             if isinstance(subject, bytes):
                                 subject = subject.decode(encoding if encoding else "utf-8")
-                            
+
                             # Extract the email body
                             body = ""
                             if msg.is_multipart():
@@ -69,13 +86,16 @@ def monitor_all_emails():
                             print(f"From: {from_}")
                             print(f"Subject: {subject}")
                             print(f"Body:\n{body}")
-                            
+
                             # Check for the keyword 'accept' in subject or body
                             if 'accept' in subject.lower() or 'accept' in body.lower():
                                 print("Access Granted")
+                            elif 'deny' in subject.lower() or 'deny' in body.lower():
+                                print("Access Denied")
+
             except Exception as e:
                 print(f"Error while checking emails: {e}")
-            
+
             time.sleep(10)  # Wait for 10 seconds before checking again
     except KeyboardInterrupt:
         print("\nExiting...")
@@ -90,4 +110,15 @@ def monitor_all_emails():
 
 # Example usage
 if __name__ == "__main__":
+    sender_email = "atm.authenticatio@gmail.com"
+    sender_password = "**** **** **** ****"
+    recipient_email = "chaitanya3035@gmail.com"
+    subject = "Card Access Confirmation"
+    message_body = "An unknown person tried using your card. Please reply with 'Accept' or 'Deny'."
+
+    # Send email with Accept/Deny options
+    send_email(sender_email, sender_password, recipient_email, subject, message_body)
+
+    # Monitor responses
+    IMAP_SERVER = "imap.gmail.com"
     monitor_all_emails()
