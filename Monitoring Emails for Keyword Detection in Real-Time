@@ -7,8 +7,8 @@ import time
 
 '''https://github.com/ChaitanyaShirse/Monitoring-Emails-for-Keyword-Detection-in-Real-Time'''
 # Account credentials
-sender_email = "atm.authenticatio@gmail.com"
-sender_password = "safu lajx mcwu gfvb"
+sender_email = "chaitanya3035@gmail.com"
+sender_password = "wxyz wxyz wxyz wxyz"     #App Password of mail
 IMAP_SERVER = "imap.gmail.com"
 
 def monitor_all_emails():
